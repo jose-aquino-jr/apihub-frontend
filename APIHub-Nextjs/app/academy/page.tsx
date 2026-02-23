@@ -7,7 +7,6 @@ import { useAuth } from '@/components/AuthProvider'
 import confetti from 'canvas-confetti'
 
 export default function AcademyHome() {
-  const { user } = useAuth()
 
   useEffect(() => {
     const duration = 7 * 1000; 

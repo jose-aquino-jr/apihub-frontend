@@ -1,36 +1,33 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 
 interface Props {
-  cursoId: string;      // slug do curso
-  moduloId: string;     // título do módulo
-  blocoId: string;      // título do bloco/aula
+  cursoId: string;      // ID (UUID) do curso
+  moduloId: string;     // ID (UUID) do módulo
+  blocoId: string;      // ID (UUID) do bloco/aula
   proximaAulaUrl: string;
 }
 
 export default function BotaoConcluir({ cursoId, moduloId, blocoId, proximaAulaUrl }: Props) {
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
-
-  useEffect(() => {
-    console.log('BotaoConcluir carregado');
-  }, []);
 
   const handleConcluir = async () => {
-    console.log('Botão clicado:', { cursoId, moduloId, blocoId });
+    console.log('🚀 Iniciando conclusão da aula:', { cursoId, moduloId, blocoId });
     setLoading(true);
 
-    const token = localStorage.getItem('token');
+    // [CORREÇÃO] Chave exata do seu LocalStorage
+    const token = localStorage.getItem('authToken');
+
     if (!token) {
-      alert('Usuário não autenticado');
+      alert('Sessão não encontrada. Por favor, faça login novamente.');
       setLoading(false);
       return;
     }
 
     try {
+      // 1. Chamada para a API com os campos que o seu servidor exige
       const res = await fetch('https://apihub-br.duckdns.org/curso-progresso-detalhe', {
         method: 'POST',
         headers: { 
@@ -38,28 +35,44 @@ export default function BotaoConcluir({ cursoId, moduloId, blocoId, proximaAulaU
           'Authorization': `Bearer ${token}` 
         },
         body: JSON.stringify({
-          curso_nome: cursoId,
-          modulo_nome: moduloId,
-          bloco_nome: blocoId,
+          curso_id: cursoId,   
+          modulo_id: moduloId, 
+          bloco_id: blocoId,   
           concluido: true
         }),
       });
 
       const data = await res.json();
-      console.log('📦 Resposta do servidor:', data);
 
       if (res.ok && data.success) {
-        console.log('✅ Concluído com sucesso, redirecionando...');
-        router.refresh();
-        router.push(proximaAulaUrl);
+        console.log('✅ Progresso salvo com sucesso no banco!');
+
+        // 2. Atualiza o progresso local para o botão "Continuar de onde parou"
+        const progressoLocal = JSON.parse(localStorage.getItem('apihub_progresso') || '{}');
+        const urlParts = window.location.pathname.split('/');
+        const slug = urlParts[3]; // Pega o slug do curso da URL atual
+        const proximaAulaId = proximaAulaUrl.split('/').pop();
+
+        if (slug && proximaAulaId) {
+          progressoLocal[slug] = proximaAulaId;
+          localStorage.setItem('apihub_progresso', JSON.stringify(progressoLocal));
+        }
+
+        // 3. Redirecionamento Forçado
+        // Usamos window.location.href para limpar o cache do Next.js e garantir 
+        // que a próxima aula reconheça que a anterior foi concluída.
+        console.log('➔ Redirecionando para:', proximaAulaUrl);
+        window.location.href = proximaAulaUrl;
+
       } else {
-        alert(` Erro ao salvar progresso: ${data.message || 'Sem mensagem do servidor'}`);
+        console.error('❌ Erro retornado pela API:', data);
+        alert(`Erro: ${data.message || 'Não foi possível salvar o progresso.'}`);
       }
     } catch (error) {
-      console.error(' Erro ao concluir aula:', error);
-      alert(' Ocorreu um erro ao salvar. Veja o console.');
+      console.error('❌ Erro na comunicação com o servidor:', error);
+      alert('Erro de conexão. Verifique se o servidor está online.');
     } finally {
-      setLoading(false);
+      // Nota: O loading permanece true até a página recarregar
     }
   };
 
@@ -67,10 +80,14 @@ export default function BotaoConcluir({ cursoId, moduloId, blocoId, proximaAulaU
     <button 
       onClick={handleConcluir}
       disabled={loading}
-      className="group flex items-center gap-4 bg-gray-900 text-white px-12 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-blue-600 transition-all disabled:opacity-50"
+      className="group flex items-center gap-4 bg-blue-600 text-white px-12 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-blue-700 transition-all disabled:opacity-70 active:scale-95 shadow-xl shadow-blue-100"
     >
-      {loading ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle2 size={20} />}
-      {loading ? 'SALVANDO...' : 'CONCLUIR E AVANÇAR'}
+      {loading ? (
+        <Loader2 className="animate-spin" size={20} />
+      ) : (
+        <CheckCircle2 size={20} className="group-hover:scale-110 transition-transform" />
+      )}
+      {loading ? 'SALVANDO...' : 'CONCLUIR E PRÓXIMA AULA'}
     </button>
   );
 }

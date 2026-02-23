@@ -7,6 +7,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 interface User {
   id: string
   email: string
+  description: string
+  tecnologies: string
   name: string
   accept_terms?: boolean
   avatar_url?: string

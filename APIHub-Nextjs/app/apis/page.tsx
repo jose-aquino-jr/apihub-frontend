@@ -661,24 +661,36 @@ function APICard({ api, index, isFavorited, onToggleFavorite, user, isAuthentica
           {api.description}
         </p>
 
-        {/* Avaliação da API - CORRIGIDO */}
-        {(api.rating && api.rating > 0) && (
-          <div className="flex items-center gap-2 mb-4">
-            <div className="flex items-center gap-0.5">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Star
-                  key={i}
-                  className={`w-4 h-4 ${
-                    i <= Math.round(api.rating || 0)
-                      ? 'fill-yellow-400 text-yellow-400'
-                      : 'fill-gray-300 text-gray-300'
-                  }`}
-                />
-              ))}
-            </div>
-            <span className="text-sm text-gray-600">{(api.rating || 0).toFixed(1)}</span>
-          </div>
-        )}
+<div className="flex items-center gap-2 mb-4">
+  <div className="flex items-center gap-0.5">
+    {[1, 2, 3, 4, 5].map((i) => (
+      <Star
+        key={i}
+        className={`w-4 h-4 ${
+          api.rating && i <= Math.round(api.rating)
+            ? 'fill-yellow-400 text-yellow-400'
+            : 'fill-gray-200 text-gray-200' // Estrelas "apagadas" se não houver nota
+        }`}
+      />
+    ))}
+  </div>
+  
+  <span className="text-sm font-medium text-gray-500">
+    {api.rating && api.rating > 0 
+      ? api.rating.toFixed(1) 
+      : '0 avaliações'}
+  </span>
+</div>
+
+        <div className="flex items-center gap-2 mb-4 text-xs font-medium">
+  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 border border-gray-200">
+    <Users className="w-3 h-3 text-gray-500" />
+  </div>
+  <span className="text-gray-500">Por:</span>
+  <span className="text-gray-900 bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">
+    {api.created_by || 'Comunidade'}
+  </span>
+</div>
 
         <div className="flex items-center gap-3 text-sm text-gray-500 mb-6 flex-wrap">
           {api.https && (

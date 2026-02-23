@@ -3,6 +3,7 @@ import { ListChecks, ArrowLeft, GraduationCap, Clock } from 'lucide-react';
 import React from 'react';
 import { notFound } from 'next/navigation';
 import CourseContent from '@/components/CourseContent'; // Certifique-se que o caminho está correto
+import BotaoContinuar from '@/components/BotaoContinuar';
 
 // --- Busca de Dados Otimizada ---
 async function getCourseData(slug: string) {
@@ -39,6 +40,8 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
   const course = await getCourseData(slug);
 
   if (!course) notFound();
+
+  const primeiraAulaId = course.curso_modulos?.[0]?.curso_blocos?.[0]?.id || '';
 
   return (
     <div className="min-h-screen pt-24 bg-[#F8FAFC]">
@@ -127,13 +130,11 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
             </div>
 
             <div className="bg-gradient-to-br from-gray-900 to-blue-900 rounded-[2.5rem] p-8 text-white shadow-xl">
-               <h3 className="font-black text-xl mb-4 leading-tight">Inicie sua jornada</h3>
-               <p className="text-blue-200 text-sm mb-8 font-medium leading-relaxed">
-                 Aprenda com José Robério e domine o ecossistema de APIs do zero ao profissional.
-               </p>
-               <button className="w-full bg-blue-500 text-white font-black py-4 rounded-2xl hover:bg-blue-400 transition-all shadow-lg active:scale-95 uppercase text-xs tracking-widest">
-                  Matricular-se Agora
-               </button>
+               <h3 className="font-black text-xl mb-4 leading-tight">Continue de onde parou</h3>
+               <BotaoContinuar 
+                 slug={slug} 
+                 primeiraAulaId={primeiraAulaId} 
+               />
             </div>
           </div>
         </div>

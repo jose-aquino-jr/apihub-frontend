@@ -17,7 +17,8 @@ export interface API {
   authentication_type: string
   auth_details?: any  
   tags: string
-  created_by?: string  
+  created_by?: string
+  created_by_id?: string  
   created_at: string
   updated_at: string
   cors: boolean

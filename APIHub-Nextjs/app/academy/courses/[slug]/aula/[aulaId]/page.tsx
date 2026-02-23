@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { ArrowLeft, ChevronLeft, ChevronRight, FileText, Lock } from 'lucide-react';
 import BotaoConcluir from '@/components/BotaoConcluir';
+import Progresso from '@/components/Progresso';
 
 export const dynamic = 'force-dynamic';
 
@@ -101,6 +102,7 @@ export default async function AulaPage({ params }: { params: any }) {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
+      <Progresso slug={slug} aulaId={aulaId} />
       {/* Barra de Progresso Superior */}
       <div className="fixed top-0 left-0 w-full h-3 bg-gray-100 z-[100] shadow-inner">
         <div 
@@ -147,6 +149,7 @@ export default async function AulaPage({ params }: { params: any }) {
           {aulaAtual.tipo === 'video' ? (
             <div className="aspect-video bg-black rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white">
               <iframe 
+                title={aulaAtual.titulo}
                 src={aulaAtual.conteudo} 
                 className="w-full h-full" 
                 allowFullScreen 
@@ -181,14 +184,16 @@ export default async function AulaPage({ params }: { params: any }) {
                >
                  AVANÇAR PARA PRÓXIMA
                </Link>
-             ) : (
-               <BotaoConcluir
-                 cursoId={course.titulo} // Nome do curso como string conforme seu backend pede
-                 moduloId={aulaAtual.moduloTitulo} 
-                 blocoId={aulaAtual.titulo}
-                 proximaAulaUrl={`/academy/courses/${slug}/aula/${proximaAula.id}`}
-               />
-             )
+) : (
+  <>
+  <BotaoConcluir
+  cursoId={course.id}          // ID do banco
+  moduloId={aulaAtual.modulo_id} // ID do banco
+  blocoId={aulaAtual.id}       // ID do banco
+  proximaAulaUrl={`/academy/courses/${slug}/aula/${proximaAula.id}`}
+/>
+  </>
+)
           ) : (
             <div className="text-center">
               <div className="text-green-600 font-black text-2xl mb-4">🏆 VOCÊ FINALIZOU ESTE CURSO!</div>

@@ -39,6 +39,9 @@ export function Header() {
             <Link href="/apis" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
               Catálogo
             </Link>
+            <Link href="/criacao" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
+              Adicionar API
+            </Link>
             <Link href="/academy" className="text-gray-700 hover:text-blue-600 font-medium transition-colors flex items-center gap-1">
               Academy
             </Link>
@@ -92,6 +95,13 @@ export function Header() {
                       📚 Meus Cursos
                     </Link>
                     <Link 
+                      href="/minhas_apis" 
+                      className="block py-2 text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded px-2"
+                    >
+                      🛠️ Minhas APIs
+                    </Link>
+                    
+                    <Link 
                       href="/configuracoes" 
                       className="block py-2 text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded px-2"
                     >
@@ -142,6 +152,9 @@ export function Header() {
               >
                 Academy
               </Link>
+              <Link href="/criacao" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
+              Adicionar API
+            </Link>
               <Link 
                 href="/suporte" 
                 className="text-gray-700 hover:text-blue-600 font-medium transition-colors py-2"
@@ -170,6 +183,13 @@ export function Header() {
                     onClick={() => setIsMenuOpen(false)}
                   >
                     📚 Meus Cursos
+                  </Link>
+                    <Link 
+                    href="/minhas_apis" 
+                    className="block py-2 text-gray-700 hover:text-blue-600"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    🛠️ Minhas APIs
                   </Link>
                   <button 
                     onClick={() => {
