@@ -176,7 +176,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           avatar_url: payload.user_metadata?.avatar_url || 
                      payload.user_metadata?.picture,
           provider: payload.app_metadata?.provider || 'google',
-          accept_terms: false
+          accept_terms: false,
+          description: '',
+          tecnologies:''
         }
       } else {
         // Não é JWT (GitHub provider_token) - criar usuário básico
@@ -190,7 +192,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           name: 'Usuário GitHub',
           avatar_url: '',
           provider: 'github',
-          accept_terms: false
+          accept_terms: false,
+          description: '',
+          tecnologies:''
         }
         
         console.warn('⚠️ GitHub provider_token - precisamos implementar busca de dados do usuário')
@@ -425,7 +429,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           name: result.data?.user?.name || 'Usuário',
           accept_terms: result.data?.user?.accept_terms || false,
           avatar_url: result.data?.user?.avatar_url,
-          provider: result.data?.user?.provider
+          provider: result.data?.user?.provider,
+          description: result.data?.user?.description || '',
+          tecnologies: result.data?.user?.tecnologies || ''
         }
         
         const accessToken = result.data?.session?.access_token
