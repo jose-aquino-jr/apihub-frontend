@@ -408,7 +408,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       console.log('🔐 Tentando login com email...')
-      const response = await fetch(`${API_BASE_URL}/login`, {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json' 
@@ -470,7 +470,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (email: string, password: string, name: string, acceptTerms: boolean) => {
     try {
       console.log('📝 Tentando registro...')
-      const response = await fetch(`${API_BASE_URL}/cadastro`, {
+      const response = await fetch(`${API_BASE_URL}/auth/cadastro`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json' 
