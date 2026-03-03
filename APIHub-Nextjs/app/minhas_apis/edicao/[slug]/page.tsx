@@ -11,6 +11,7 @@ import {
   MapPin, Camera, MessageCircle, Music, Gamepad2, Brain, 
   Code, Mail, Calendar, BarChart3, Smartphone, LucideIcon, Loader2
 } from 'lucide-react';
+import { useAuth } from '@/components/AuthProvider';
 
 const CATEGORY_MAP: Record<string, { color: string; icon: LucideIcon }> = {
   'Animais': { color: 'from-orange-500 to-pink-500', icon: PawPrint },
@@ -41,6 +42,7 @@ const CATEGORY_MAP: Record<string, { color: string; icon: LucideIcon }> = {
 export default function EdicaoAPI() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const apiId = params?.id;
 
   const [loading, setLoading] = useState(true);
@@ -50,6 +52,7 @@ export default function EdicaoAPI() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [endpoint, setEndpoint] = useState('');
+  const [method, setMethod] = useState<'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'>('GET');
   const [parameters, setParameters] = useState('');
   const [category, setCategory] = useState('');
   const [isHttps, setIsHttps] = useState(true);
@@ -57,28 +60,26 @@ export default function EdicaoAPI() {
 
   useEffect(() => {
     async function loadApiData() {
-      // 1. Verificar se é um ID de simulação (1 ou 2) em desenvolvimento
       if ((apiId === '1' || apiId === '2') && process.env.NODE_ENV === 'development') {
         setTimeout(() => {
           setName(apiId === '1' ? 'API de Exemplo (Simulada)' : 'Sistema de IA (Simulado)');
-          setDescription('Esta é uma descrição de teste para validar o layout da tela de edição.');
-          setEndpoint('https://api.exemplo.com/v1');
+          setMethod('GET');
           setCategory(apiId === '1' ? 'Desenvolvimento' : 'IA');
-          setParameters('key, limit, offset');
           setLoading(false);
-        }, 500); // Simula um delay de rede
+        }, 500);
         return;
       }
 
       try {
         const res = await fetch(`https://apihub-br.duckdns.org/api-detalhes/${apiId}`);
         const data = await res.json();
+        const api = data.success ? data.data : data;
         
-        if (data.success) {
-          const api = data.data;
-          setName(api.name || '');
+        if (api && api.name) {
+          setName(api.name);
           setDescription(api.description || '');
           setEndpoint(api.base_url || '');
+          setMethod(api.method || 'GET');
           setCategory(api.tags || '');
           setIsHttps(!!api.https);
           setIsCors(!!api.cors);
@@ -88,30 +89,18 @@ export default function EdicaoAPI() {
           router.push('/minhas_apis');
         }
       } catch (error) {
-        console.error("Erro ao carregar:", error);
-        // Fallback para dev se a API falhar
-        if (process.env.NODE_ENV === 'development') {
-           setName('Fallback Dev');
-           setCategory('Dados');
-           setLoading(false);
-        } else {
-          toast.error("Erro de conexão.");
-        }
+        toast.error("Erro ao carregar dados.");
       } finally {
         setLoading(false);
       }
     }
-    loadApiData();
+    if (apiId) loadApiData();
   }, [apiId, router]);
-
-  const categoryData = CATEGORY_MAP[category] || { color: 'from-blue-600 to-indigo-600', icon: Database };
-  const SelectedIcon = categoryData.icon;
-  const selectedGradient = categoryData.color;
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (apiId === '1' || apiId === '2') {
-      toast.info("Simulação: Os dados não foram salvos no banco real.");
+      toast.info("Simulação: Dados não persistidos.");
       return;
     }
 
@@ -126,21 +115,44 @@ export default function EdicaoAPI() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          name, description, base_url: endpoint,
-          tags: category, https: isHttps, cors: isCors, parameters
+          name,
+          description,
+          base_url: endpoint,
+          method,
+          tags: category,
+          https: isHttps,
+          cors: isCors,
+          parameters,
+          updated_at: new Date().toISOString()
         })
       });
 
       if (res.ok) {
-        toast.success('API atualizada!');
+        toast.success('Alterações salvas!');
         router.push('/minhas_apis');
       } else {
-        toast.error('Erro ao salvar.');
+        toast.error('Falha ao atualizar API.');
       }
     } catch (err) {
       toast.error('Erro de conexão.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const categoryData = CATEGORY_MAP[category] || { color: 'from-blue-600 to-indigo-600', icon: Database };
+  const SelectedIcon = categoryData.icon;
+  const selectedGradient = categoryData.color;
+
+  // Função para definir a cor do texto baseada no Método HTTP
+  const getMethodColor = (m: string) => {
+    switch(m) {
+      case 'GET': return 'text-green-600';
+      case 'POST': return 'text-blue-600';
+      case 'DELETE': return 'text-red-600';
+      case 'PUT': 
+      case 'PATCH': return 'text-orange-500';
+      default: return 'text-gray-600';
     }
   };
 
@@ -171,67 +183,121 @@ export default function EdicaoAPI() {
               className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full text-sm font-bold mb-4 shadow-sm border border-gray-100"
             >
               <SelectedIcon className="w-4 h-4 text-blue-600" />
-              {category || 'Selecione a Categoria'}
+              {category || 'Sem Categoria'}
             </motion.div>
           </AnimatePresence>
           <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">Editar API</h1>
-          {apiId?.length === 1 && (
-            <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold">MODO SIMULAÇÃO</span>
-          )}
         </div>
 
         <form onSubmit={handleUpdate} className="space-y-6 bg-white p-6 md:p-10 rounded-[2.5rem] border border-gray-200 shadow-xl shadow-blue-900/5">
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label htmlFor="edit-name" className="text-sm font-bold text-gray-700 ml-1">Nome da API</label>
-              <input id="edit-name" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: API de Clima" className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50" required />
+          {/* Seção 1: Nome e Método */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2 space-y-2">
+              <label className="text-sm font-bold text-gray-700 ml-1">Nome da API</label>
+              <input 
+                type="text" 
+                value={name} 
+                onChange={(e) => setName(e.target.value)} 
+                className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50" 
+                required 
+              />
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="edit-category" className="text-sm font-bold text-gray-700 ml-1">Categoria</label>
+              <label className="text-sm font-bold text-gray-700 ml-1">Método HTTP</label>
               <div className="relative">
-                <select id="edit-category" value={category} onChange={(e) => setCategory(e.target.value)} title="Categoria da API" className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none appearance-none bg-gray-50/50 cursor-pointer" required>
-                  <option value="" disabled>Escolha uma opção...</option>
-                  {Object.keys(CATEGORY_MAP).sort().map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                <select 
+                  value={method} 
+                  onChange={(e) => setMethod(e.target.value as any)} 
+                  className={`w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none appearance-none bg-gray-50/50 cursor-pointer font-black ${getMethodColor(method)}`} 
+                  required
+                >
+                  <option value="GET">GET</option>
+                  <option value="POST">POST</option>
+                  <option value="PUT">PUT</option>
+                  <option value="PATCH">PATCH</option>
+                  <option value="DELETE">DELETE</option>
                 </select>
                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
               </div>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label htmlFor="edit-desc" className="text-sm font-bold text-gray-700 ml-1">Descrição</label>
-            <textarea id="edit-desc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descreva as funcionalidades..." className="w-full p-4 h-28 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50 resize-none" required />
-          </div>
-
+          {/* Seção 2: Categoria e Parâmetros */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label htmlFor="edit-url" className="text-sm font-bold text-gray-700 ml-1">URL Base</label>
-              <input id="edit-url" type="text" value={endpoint} onChange={(e) => setEndpoint(e.target.value)} placeholder="https://api.exemplo.com" className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50" required />
+              <label className="text-sm font-bold text-gray-700 ml-1">Categoria Principal</label>
+              <div className="relative">
+                <select 
+                  value={category} 
+                  onChange={(e) => setCategory(e.target.value)} 
+                  className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none appearance-none bg-gray-50/50 cursor-pointer" 
+                  required
+                >
+                  <option value="" disabled>Selecione...</option>
+                  {Object.keys(CATEGORY_MAP).sort().map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                </select>
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+              </div>
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="edit-params" className="text-sm font-bold text-gray-700 ml-1">Parâmetros</label>
-              <input id="edit-params" type="text" value={parameters} onChange={(e) => setParameters(e.target.value)} placeholder="Ex: key, lang" className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50" />
+              <label className="text-sm font-bold text-gray-700 ml-1">Parâmetros (Query)</label>
+              <input 
+                type="text" 
+                value={parameters} 
+                onChange={(e) => setParameters(e.target.value)} 
+                placeholder="ex: id, key, limit" 
+                className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50" 
+              />
             </div>
           </div>
 
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-gray-700 ml-1">URL Base do Serviço</label>
+            <input 
+              type="text" 
+              value={endpoint} 
+              onChange={(e) => setEndpoint(e.target.value)} 
+              className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50" 
+              placeholder="https://sua-api.com/v1" 
+              required 
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-gray-700 ml-1">Descrição</label>
+            <textarea 
+              value={description} 
+              onChange={(e) => setDescription(e.target.value)} 
+              className="w-full p-4 h-28 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50 resize-none" 
+              required 
+            />
+          </div>
+
+          {/* Segurança */}
           <div className="flex flex-wrap gap-4 py-2">
-            <button type="button" title={isHttps ? "Desativar HTTPS" : "Ativar HTTPS"} onClick={() => setIsHttps(!isHttps)} className={`flex items-center gap-2 px-5 py-2.5 rounded-full border-2 transition-all ${isHttps ? 'bg-green-50 border-green-200 text-green-700' : 'bg-gray-50 border-gray-100 text-gray-400'}`}>
+            <button type="button" onClick={() => setIsHttps(!isHttps)} className={`flex items-center gap-2 px-5 py-2.5 rounded-full border-2 transition-all ${isHttps ? 'bg-green-50 border-green-200 text-green-700' : 'bg-gray-50 border-gray-100 text-gray-400'}`}>
               <Shield className="w-4 h-4" />
-              <span className="text-xs font-black uppercase">HTTPS {isHttps ? 'Ativo' : 'Inativo'}</span>
+              <span className="text-[10px] font-black uppercase">HTTPS {isHttps ? 'On' : 'Off'}</span>
             </button>
 
-            <button type="button" title={isCors ? "Desativar CORS" : "Ativar CORS"} onClick={() => setIsCors(!isCors)} className={`flex items-center gap-2 px-5 py-2.5 rounded-full border-2 transition-all ${isCors ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-gray-50 border-gray-100 text-gray-400'}`}>
+            <button type="button" onClick={() => setIsCors(!isCors)} className={`flex items-center gap-2 px-5 py-2.5 rounded-full border-2 transition-all ${isCors ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-gray-50 border-gray-100 text-gray-400'}`}>
               <Globe className="w-4 h-4" />
-              <span className="text-xs font-black uppercase">CORS {isCors ? 'Ativo' : 'Inativo'}</span>
+              <span className="text-[10px] font-black uppercase">CORS {isCors ? 'On' : 'Off'}</span>
             </button>
           </div>
 
-          <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} type="submit" disabled={saving} className={`w-full py-5 rounded-[1.5rem] text-white font-bold text-lg shadow-xl flex items-center justify-center gap-3 bg-gradient-to-r ${selectedGradient} ${saving ? 'opacity-70 cursor-not-allowed' : ''}`}>
+          <motion.button 
+            whileHover={{ scale: 1.01 }} 
+            whileTap={{ scale: 0.98 }} 
+            type="submit" 
+            disabled={saving} 
+            className={`w-full py-5 rounded-[1.5rem] text-white font-bold text-lg shadow-xl flex items-center justify-center gap-3 bg-gradient-to-r ${selectedGradient} ${saving ? 'opacity-50' : ''}`}
+          >
             {saving ? <Loader2 className="animate-spin" size={24} /> : <Save size={24} />}
-            {saving ? 'SALVANDO...' : 'SALVAR ALTERAÇÕES'}
+            {saving ? 'SALVANDO...' : 'ATUALIZAR API'}
           </motion.button>
         </form>
       </div>

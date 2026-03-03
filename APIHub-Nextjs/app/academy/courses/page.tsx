@@ -6,20 +6,20 @@ import { Search, BookOpen, Clock } from 'lucide-react'
 import React from 'react'
 import Link from 'next/link'
 
+// URL conforme sua observação
 const BACKEND_URL = 'https://apihub-br.duckdns.org'
 
+// Interface ajustada aos campos reais da doc 
 interface Course {
   id: string | number
   slug: string
   title: string
   description: string
-  level: string
+  level: 'iniciante' | 'intermediario' | 'avancado'
   is_free: boolean
-  full_price: number
   totalDurationMinutes: number
-  modules_count: number
-  instructor: string
   image: string
+  published: boolean // Campo existente na doc 
 }
 
 const levelColors: Record<string, string> = {
@@ -37,27 +37,27 @@ export default function CoursesPage() {
     async function fetchCourses() {
       try {
         setLoading(true)
+        // Item 6.1 da documentação 
         const res = await fetch(`${BACKEND_URL}/cursos`)
         const response = await res.json()
         
-        // Acessando a propriedade 'data' que contém a lista
-        const rawData = response.success && Array.isArray(response.data) ? response.data : []
+        // O backend retorna { success: boolean, data: [] } [cite: 191, 208]
+        if (response.success && Array.isArray(response.data)) {
+          const formattedCourses = response.data.map((c: any) => ({
+            id: c.id,
+            slug: c.slug,
+            title: c.titulo, 
+            description: c.descricao,
+            level: (c.nivel?.toLowerCase() || 'iniciante') as Course['level'],
+            is_free: c.is_free ?? true, // Verifique se o backend envia este campo
+            totalDurationMinutes: Number(c.duracao_estimada) || 0,
+            image: c.thumbnail_url || `https://via.placeholder.com/400x200`,
+            published: c.published
+          }))
 
-        const formattedCourses = rawData.map((c: any) => ({
-          id: c.id,
-          slug: c.slug,
-          title: c.titulo, // Ajustado para 'titulo' conforme seu JSON
-          description: c.descricao,
-          level: c.nivel?.toLowerCase() || 'iniciante',
-          is_free: true, 
-          full_price: 0,
-          totalDurationMinutes: c.duracao_estimada || 0, // Ajustado para 'duracao_estimada'
-          modules_count: 0, 
-          instructor: 'José Robério',
-          image: c.thumbnail_url || `https://via.placeholder.com/400x200`
-        }))
-
-        setCourses(formattedCourses)
+          // Filtra apenas os cursos publicados conforme boa prática de catálogo
+          setCourses(formattedCourses.filter((c: Course) => c.published !== false))
+        }
       } catch (error) {
         console.error("Erro ao carregar cursos:", error)
       } finally {
@@ -67,10 +67,11 @@ export default function CoursesPage() {
     fetchCourses()
   }, [])
 
-  // Filtro de busca funcional
   const filteredCourses = courses.filter(course =>
     course.title.toLowerCase().includes(search.toLowerCase())
   )
+
+  // ... (Restante do seu JSX de carregamento e busca permanece igual, ele está excelente!)
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">

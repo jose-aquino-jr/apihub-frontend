@@ -420,7 +420,7 @@ export function APIDetailClient({ initialApi, initialRelated, initialCategory }:
               </span>
               <span className="text-orange-600 font-semibold">GRATUITA</span>
               <span className="text-purple-700 font-semibold">Por:</span>
-              <Link href={`/profile/${api.created_by_id || api.created_by}`}
+              <Link href={`/users/profile/${api.created_by_id}`}
                 className="text-blue-600 hover:underline font-medium"
               >{api.created_by || "Comunidade"}</Link>
             </div>

@@ -1,18 +1,21 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { toast, Toaster } from 'sonner';
 import { useAuth } from '@/components/AuthProvider';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Zap, Shield, Globe, ChevronDown, 
   PawPrint, Languages, Database, GraduationCap, Book, 
   ShoppingCart, Cloud, Smile, Image, DollarSign, Users, 
   MapPin, Camera, MessageCircle, Music, Gamepad2, Brain, 
-  Code, Mail, Calendar, BarChart3, Smartphone, LucideIcon
+  Code, Mail, Calendar, BarChart3, Smartphone, LucideIcon,
+  Check, Loader2, Code2
 } from 'lucide-react';
 
-// Tipagem para o Mapa de Categorias
+// --- CONFIGURAÇÕES E MAPEAMENTOS ---
+
 interface CategoryConfig {
   color: string;
   icon: LucideIcon;
@@ -44,57 +47,98 @@ const CATEGORY_MAP: Record<string, CategoryConfig> = {
   'Mobile': { color: 'from-blue-500 to-purple-500', icon: Smartphone }
 };
 
-export default function CriacaoAPI() {
-  const { user } = useAuth()
+const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
+const METHOD_STYLES: Record<string, string> = {
+  GET: 'border-green-500 text-green-600 bg-green-50',
+  POST: 'border-blue-500 text-blue-600 bg-blue-50',
+  PUT: 'border-amber-500 text-amber-600 bg-amber-50',
+  PATCH: 'border-purple-500 text-purple-600 bg-purple-50',
+  DELETE: 'border-red-500 text-red-600 bg-red-50',
+};
+
+// --- COMPONENTE PRINCIPAL ---
+
+export default function CriacaoAPI() {
+  const { user } = useAuth();
+  const router = useRouter();
+
+  // Estados do Formulário
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [endpoint, setEndpoint] = useState('');
   const [parameters, setParameters] = useState('');
   const [category, setCategory] = useState('');
+  const [selectedMethods, setSelectedMethods] = useState<string[]>(['GET']);
   const [isHttps, setIsHttps] = useState(true);
   const [isCors, setIsCors] = useState(true);
+  const [enviando, setEnviando] = useState(false);
 
-  // Ícone dinâmico baseado na categoria selecionada
-  const categoryData = CATEGORY_MAP[category] || { color: 'from-blue-500 to-purple-500', icon: Database };
+  // Lógica de Multi-seleção de Métodos
+  const toggleMethod = (method: string) => {
+    setSelectedMethods(prev => 
+      prev.includes(method) 
+        ? (prev.length > 1 ? prev.filter(m => m !== method) : prev) 
+        : [...prev, method]
+    );
+  };
+
+  const categoryData = CATEGORY_MAP[category] || { color: 'from-blue-600 to-purple-600', icon: Database };
   const SelectedIcon = categoryData.icon;
   const selectedGradient = categoryData.color;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
+    
     if (!name || !description || !endpoint || !category) {
-      toast.error('Campos obrigatórios', { 
-        description: 'Por favor, preencha nome, categoria, descrição e URL base.' 
-      });
+      toast.error('Campos obrigatórios faltando');
       return;
     }
 
-    const novaApi = {
-      id: Date.now().toString(),
-      name,
-      description,
-      base_url: endpoint,
-      tags: category,
-      https: isHttps,
-      cors: isCors,
-      authentication_type: 'none',
-      parameters: parameters,
-      rating: 5.0,
-      created_at: new Date().toISOString(),
-    };
+    setEnviando(true);
 
-    console.log("Objeto pronto para o Catálogo:", novaApi);
-    toast.success('API Criada!', { 
-      description: `${name} foi enviada com sucesso para o seu catálogo.` 
-    });
-    
-    // Aqui você poderia usar o useRouter() do Next.js para voltar:
-    // router.push('/minhas-apis');
+    try {
+      const token = localStorage.getItem('authToken');
+      
+      const payload = {
+        name,
+        description,
+        base_url: endpoint,
+        method: selectedMethods.join(','), // Ex: "GET,POST"
+        tags: category,
+        https: isHttps,
+        cors: isCors,
+        authentication_type: 'none',
+        parameters: parameters,
+      };
+
+      const response = await fetch('https://apihub-br.duckdns.org/apis/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        toast.success('API Publicada!', { 
+          description: `${name} agora faz parte do catálogo oficial.` 
+        });
+        router.push('/academy/dashboard');
+      } else {
+        const data = await response.json();
+        throw new Error(data.detail || 'Erro ao processar requisição');
+      }
+    } catch (error: any) {
+      toast.error('Erro na publicação', { description: error.message });
+    } finally {
+      setEnviando(false);
+    }
   }
 
   return (
-    <div className="min-h-screen pt-28 pb-12 bg-gradient-to-br from-gray-50 via-white to-blue-50/30 px-4">
+    <div className="min-h-screen pt-28 pb-12 bg-gradient-to-br from-gray-50 via-white to-blue-50/30 px-4 text-black">
       <Toaster richColors position="top-right" />
       
       <div className="max-w-3xl mx-auto">
@@ -106,7 +150,7 @@ export default function CriacaoAPI() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full text-sm font-bold mb-4 shadow-sm border border-gray-100 text-gray-700"
             >
-              <SelectedIcon className={`w-4 h-4 text-blue-600`} />
+              <SelectedIcon className="w-4 h-4 text-blue-600" />
               {category || 'Nova API'}
             </motion.div>
           </AnimatePresence>
@@ -114,20 +158,48 @@ export default function CriacaoAPI() {
           <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
             Publicar no <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Catálogo</span>
           </h1>
-          <p className="text-gray-500 mt-2">Preencha os dados abaixo para disponibilizar sua API.</p>
+          <p className="text-gray-500 mt-2">Sua API será listada para toda a comunidade Dev.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 md:p-10 rounded-[2.5rem] border border-gray-200 shadow-xl shadow-blue-900/5">
           
+          {/* SELETOR DE MÉTODOS HTTP (MULTI-SELECT) */}
+          <div className="space-y-3">
+            <label className="text-sm font-bold text-gray-700 ml-1 flex items-center gap-2">
+              <Code2 size={18} className="text-blue-600" /> Métodos Disponíveis
+            </label>
+            <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+              {HTTP_METHODS.map((m) => {
+                const active = selectedMethods.includes(m);
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => toggleMethod(m)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all border-2 ${
+                      active 
+                        ? `${METHOD_STYLES[m]} border-current scale-105 shadow-md` 
+                        : 'bg-white border-transparent text-gray-400 hover:border-gray-300'
+                    }`}
+                  >
+                    {active && <Check size={14} />}
+                    {m}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700 ml-1">Nome da API</label>
               <input 
+                required
                 type="text" 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Ex: API de Clima Real"
-                className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-gray-50/50 text-black placeholder:text-gray-400"
+                className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50"
               />
             </div>
 
@@ -135,10 +207,10 @@ export default function CriacaoAPI() {
               <label className="text-sm font-bold text-gray-700 ml-1">Categoria</label>
               <div className="relative">
                 <select 
-                  title='Category'
+                  required
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none appearance-none bg-gray-50/50 transition-all cursor-pointer text-black"
+                  className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none appearance-none bg-gray-50/50 cursor-pointer"
                 >
                   <option value="">Selecione uma categoria...</option>
                   {Object.keys(CATEGORY_MAP).sort().map(cat => (
@@ -153,10 +225,11 @@ export default function CriacaoAPI() {
           <div className="space-y-2">
             <label className="text-sm font-bold text-gray-700 ml-1">Descrição</label>
             <textarea 
+              required
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descreva as funcionalidades e o que ela retorna..."
-              className="w-full p-4 h-28 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50 text-black placeholder:text-gray-400 resize-none"
+              placeholder="Descreva as funcionalidades..."
+              className="w-full p-4 h-28 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50 resize-none"
             />
           </div>
 
@@ -164,11 +237,12 @@ export default function CriacaoAPI() {
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700 ml-1">URL Base (Endpoint)</label>
               <input 
+                required
                 type="text" 
                 value={endpoint}
                 onChange={(e) => setEndpoint(e.target.value)}
                 placeholder="https://api.exemplo.com"
-                className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50 text-black placeholder:text-gray-400"
+                className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50"
               />
             </div>
 
@@ -179,7 +253,7 @@ export default function CriacaoAPI() {
                 value={parameters}
                 onChange={(e) => setParameters(e.target.value)}
                 placeholder="Ex: key, city, lang"
-                className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50 text-black placeholder:text-gray-400"
+                className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50"
               />
             </div>
           </div>
@@ -188,30 +262,40 @@ export default function CriacaoAPI() {
             <button
               type="button"
               onClick={() => setIsHttps(!isHttps)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-full border-2 transition-all ${isHttps ? 'bg-green-50 border-green-200 text-green-700' : 'bg-gray-50 border-gray-100 text-gray-400'}`}
+              className={`flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-2xl border-2 transition-all ${isHttps ? 'bg-green-50 border-green-200 text-green-700' : 'bg-gray-50 border-gray-100 text-gray-400'}`}
             >
               <Shield className={`w-4 h-4 ${isHttps ? 'text-green-500' : ''}`} />
-              <span className="text-xs font-black uppercase tracking-wider">HTTPS {isHttps ? 'Ativo' : 'Inativo'}</span>
+              <span className="text-xs font-black uppercase">HTTPS</span>
             </button>
 
             <button
               type="button"
               onClick={() => setIsCors(!isCors)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-full border-2 transition-all ${isCors ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-gray-50 border-gray-100 text-gray-400'}`}
+              className={`flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-2xl border-2 transition-all ${isCors ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-gray-50 border-gray-100 text-gray-400'}`}
             >
               <Globe className={`w-4 h-4 ${isCors ? 'text-blue-500' : ''}`} />
-              <span className="text-xs font-black uppercase tracking-wider">CORS {isCors ? 'Ativo' : 'Inativo'}</span>
+              <span className="text-xs font-black uppercase">CORS</span>
             </button>
           </div>
 
           <motion.button 
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
+            disabled={enviando}
             type="submit"
-            className={`w-full py-5 rounded-[1.5rem] text-white font-bold text-lg shadow-xl transition-all flex items-center justify-center gap-3 bg-gradient-to-r ${selectedGradient}`}
+            className={`w-full py-5 rounded-[1.5rem] text-white font-bold text-lg shadow-xl transition-all flex items-center justify-center gap-3 bg-gradient-to-r ${selectedGradient} ${enviando ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
-            Cadastrar no Catálogo
-            <Zap className="w-6 h-6 fill-white" />
+            {enviando ? (
+              <>
+                <Loader2 className="w-6 h-6 animate-spin" />
+                Publicando API...
+              </>
+            ) : (
+              <>
+                Cadastrar no Catálogo
+                <Zap className="w-6 h-6 fill-white" />
+              </>
+            )}
           </motion.button>
         </form>
       </div>

@@ -36,7 +36,7 @@ export function RankingClient({ initialRanking, initialMeta }: RankingClientProp
       setLoading(true)
       setError(null)
       
-      const response = await fetch('https://apihub-br.duckdns.org/ranking')
+      const response = await fetch('https://apihub-br.duckdns.org/ranking?limit=50')
       
       if (!response.ok) {
         throw new Error(`Erro HTTP ${response.status}`)
