@@ -423,32 +423,37 @@ export function APIDetailClient({
   };
 
   const reportOptions = [
-    {
-      id: "api_offline",
-      label: "⚠️ API Inútil / Fora do ar",
-      description: "API não está funcionando ou retorna erros",
-    },
-    {
-      id: "offensive_content",
-      label: "🚫 Conteúdo Ofensivo",
-      description: "Conteúdo impróprio, ofensivo ou inadequado",
-    },
-    {
-      id: "fake_data",
-      label: "❌ Dados Falsos",
-      description: "API retorna informações incorretas ou falsas",
-    },
-    {
-      id: "terms_violation",
-      label: "🛡️ Violação de Termos",
-      description: "API viola nossos termos de serviço",
-    },
-    {
-      id: "other",
-      label: "📝 Outros",
-      description: "Outro motivo não listado",
-    },
-  ];
+  {
+    id: "api_offline",
+    label: "⚠️ API Inútil / Fora do ar",
+    reason: "API Inútil / Fora do ar", 
+    description: "API não está funcionando ou retorna erros",
+  },
+  {
+    id: "offensive_content",
+    label: "🚫 Conteúdo Ofensivo",
+    reason: "Conteúdo Ofensivo",
+    description: "Conteúdo impróprio, ofensivo ou inadequado",
+  },
+  {
+    id: "fake_data",
+    label: "❌ Dados Falsos",
+    reason: "Dados Falsos",
+    description: "API retorna informações incorretas ou falsas",
+  },
+  {
+    id: "terms_violation",
+    label: "🛡️ Violação de Termos",
+    reason: "Violação de Termos",
+    description: "API viola nossos termos de serviço",
+  },
+  {
+    id: "other",
+    label: "📝 Outros",
+    reason: "Outros",
+    description: "Outro motivo não listado",
+  },
+]
 
   const fullUrl = `${api.base_url}${api.endpoint_path || ""}`;
   const parameters = api.parameters ? parseParameters(api.parameters) : {};
@@ -569,13 +574,9 @@ export function APIDetailClient({
                           }`}
                           onClick={() => {
                             if (option.id === "other") {
-                              setReportReason("other");
+                              setReportReason("other")
                             } else {
-                              const reasonText = option.label.replace(
-                                /^[^\s]+\s/,
-                                "",
-                              );
-                              handleReport(reasonText);
+                              handleReport(option.reason) // ← sem regex, direto e confiável
                             }
                           }}
                         >

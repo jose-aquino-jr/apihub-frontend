@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { Clock, Zap, BookOpen, Sparkles, GraduationCap } from 'lucide-react'
 import { useAuth } from '@/components/AuthProvider'
 import confetti from 'canvas-confetti'
-import { useRouter } from 'next/router'
+import { useRouter } from 'next/navigation'
 
 export default function AcademyHome() {
 

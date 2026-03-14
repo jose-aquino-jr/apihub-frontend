@@ -6,14 +6,16 @@ import { Camera, User, Loader2, Check, Save } from 'lucide-react'
 import { useAuth } from '@/components/AuthProvider'
 import { toast, Toaster } from 'sonner'
 
-// Lista de tecnologias para seleção
 const BACKEND_TECHS = [
   'Node.js', 'Python', 'Go', 'Java', 'C#', 
   'PHP', 'Ruby', 'Rust', 'TypeScript', 'C++'
 ]
 
 export default function Configuracoes() {
-  const { user, refreshUserData } = useAuth() // FIX 1: importar refreshUserData
+  // checkSession: verifica se o token ainda é válido antes de salvar
+  // updateUserData: atualiza o contexto e o localStorage localmente,
+  //                 sem precisar de uma nova requisição ao backend
+  const { user, checkSession, updateUserData } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const [name, setName] = useState('')
@@ -51,11 +53,21 @@ export default function Configuracoes() {
       return
     }
 
+    // Verifica se o token ainda é válido antes de tentar salvar.
+    // Tokens expiram em 1 hora — sem essa checagem, o PUT chega ao
+    // servidor com um token inválido e retorna Internal Server Error.
+    const sessionValid = await checkSession()
+    if (!sessionValid) {
+      toast.error("Sessão expirada", { description: "Por favor, faça login novamente." })
+      setIsSaving(false)
+      return
+    }
+
     try {
       const payload = {
-        name: name,
-        bio: bio,
-        preferredLanguages: preferredLanguages,
+        name,
+        bio,
+        preferredLanguages,
       }
 
       const res = await fetch(`https://apihub-br.duckdns.org/users/profile/${user.id}`, {
@@ -71,16 +83,22 @@ export default function Configuracoes() {
         toast.success("Perfil atualizado!", {
           description: "As alterações foram persistidas no banco de dados."
         })
-        await refreshUserData() // FIX 1: sincroniza o contexto com os dados novos
+
+        // updateUserData aplica as mudanças diretamente no contexto e no
+        // localStorage — é a escolha certa aqui porque já sabemos exatamente
+        // o que mudou, sem precisar de uma nova requisição ao backend.
+        updateUserData({ name, bio, preferredLanguages })
+
       } else {
-        // FIX 2: tenta parsear o erro, mas não deixa uma falha de parse
-        // esconder a mensagem real — usa o status HTTP como fallback
+        // Tenta extrair a mensagem de erro do corpo da resposta.
+        // Se o corpo não for JSON (ex: erro 500 em HTML puro),
+        // usa o código HTTP como fallback para não esconder o erro real.
         let errorMessage = `Erro ${res.status}`
         try {
           const errorData = await res.json()
           errorMessage = errorData.message || errorMessage
         } catch {
-          // corpo da resposta não era JSON, mantém o fallback de status
+          // corpo não era JSON, mantém o fallback
         }
         throw new Error(errorMessage)
       }
