@@ -20,9 +20,8 @@ async function getCourseData(slug: string) {
 
     if (!basicData || !basicData.id) return basicData;
 
-    // 2. Busca a estrutura completa (módulos + blocos) usando o ID
-    // Conforme Seção 6.5 da Doc: GET /curso-completo/{curso_id} [cite: 243, 244]
-    const resFull = await fetch(`${API_BASE}/curso-completo/${basicData.id}`, {
+    // Conforme Seção 6.5 da Doc: GET /curso-completo/{curso_id}
+    const resFull = await fetch(`${API_BASE}/completo/${basicData.id}`, {
       next: { revalidate: 60 }
     });
 
