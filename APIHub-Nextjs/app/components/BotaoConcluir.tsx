@@ -17,8 +17,9 @@ export default function BotaoConcluir({ cursoId, moduloId, blocoId, proximaAulaU
     console.log('🚀 Iniciando conclusão da aula:', { cursoId, moduloId, blocoId });
     setLoading(true);
 
-    // [CORREÇÃO] Chave exata do seu LocalStorage
-    const token = localStorage.getItem('authToken');
+    // Tenta pegar token do localStorage OU dos cookies
+    const token = localStorage.getItem('authToken') || 
+                  document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
 
     if (!token) {
       alert('Sessão não encontrada. Por favor, faça login novamente.');
@@ -27,18 +28,18 @@ export default function BotaoConcluir({ cursoId, moduloId, blocoId, proximaAulaU
     }
 
     try {
-      // 1. Chamada para a API com os campos que o seu servidor exige
-      const res = await fetch('https://apihub-br.duckdns.org/curso-progresso-detalhe', {
+      // ✅ ROTA CORRIGIDA: /curso-progresso/detalhe (COM BARRA)
+      const res = await fetch('https://apihub-br.duckdns.org/curso-progresso/detalhe', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}` 
         },
         body: JSON.stringify({
-  curso_id: cursoId,   
-  modulo_id: moduloId, 
-  bloco_id: blocoId,   
-  progresso_percentual: 100
+          curso_id: cursoId,
+          modulo_id: moduloId,
+          bloco_id: blocoId,
+          progresso_percentual: 100
         }),
       });
 
@@ -47,7 +48,7 @@ export default function BotaoConcluir({ cursoId, moduloId, blocoId, proximaAulaU
       if (res.ok && data.success) {
         console.log('✅ Progresso salvo com sucesso no banco!');
 
-        // 2. Atualiza o progresso local para o botão "Continuar de onde parou"
+        // Atualiza o progresso local
         const progressoLocal = JSON.parse(localStorage.getItem('apihub_progresso') || '{}');
         const urlParts = window.location.pathname.split('/');
         const slug = urlParts[3]; // Pega o slug do curso da URL atual
@@ -58,9 +59,7 @@ export default function BotaoConcluir({ cursoId, moduloId, blocoId, proximaAulaU
           localStorage.setItem('apihub_progresso', JSON.stringify(progressoLocal));
         }
 
-        // 3. Redirecionamento Forçado
-        // Usamos window.location.href para limpar o cache do Next.js e garantir 
-        // que a próxima aula reconheça que a anterior foi concluída.
+        // Redirecionamento
         console.log('➔ Redirecionando para:', proximaAulaUrl);
         window.location.href = proximaAulaUrl;
 
