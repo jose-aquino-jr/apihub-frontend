@@ -28,7 +28,7 @@ export default function BotaoConcluir({ cursoId, moduloId, blocoId, proximaAulaU
 
     try {
       // Endpoint correto: POST /curso-progresso-detalhe (seção 7.4)
-      const res = await fetch('https://apihub-br.duckdns.org/curso-progresso/detalhe', {
+      const res = await fetch('https://apihub-br.duckdns.org/curso-progresso-detalhe', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -62,12 +62,12 @@ export default function BotaoConcluir({ cursoId, moduloId, blocoId, proximaAulaU
         window.location.href = proximaAulaUrl;
 
       } else {
-        console.error('❌ Erro retornado pela API:', data);
+        console.error('Erro retornado pela API:', data);
         alert(`Erro: ${data.message || 'Não foi possível salvar o progresso.'}`);
         setLoading(false);
       }
     } catch (error) {
-      console.error('❌ Erro na comunicação com o servidor:', error);
+      console.error('Erro na comunicação com o servidor:', error);
       alert('Erro de conexão. Verifique se o servidor está online.');
       setLoading(false);
     }
