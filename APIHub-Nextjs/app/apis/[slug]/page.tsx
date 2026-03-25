@@ -1,43 +1,43 @@
-// app/apis/[slug]/page.tsx - SSR
+// app/apis/[slug]/page.tsx
 import { notFound } from 'next/navigation'
-import { getApiBySlug, getRelatedApis, getCategoryFromTags } from '@/lib/utils'
+import { Suspense } from 'react'
+import { fetchAPIBySlug, fetchAPIs } from '@/lib/api'
 import { APIDetailClient } from '@/components/APIDetailClient'
 import { APIDetailSkeleton } from '@/components/APIDetailSkeleton'
-import { Suspense } from 'react'
 
-// Forçar SSR
-export const dynamic = 'force-dynamic'
-export const revalidate = 3600 // Revalidar a cada hora
+export const revalidate = 3600
+export const dynamic = 'force-static'
 
 interface PageProps {
-  params: {
-    slug: string
-  }
+  params: Promise<{ slug: string }>
 }
 
 async function getAPI(slug: string) {
-  const api = await getApiBySlug(slug)
+  const api = await fetchAPIBySlug(slug)
   if (!api) return null
   
-  const related = await getRelatedApis(api, 4)
-  return { api, related }
+  // Buscar APIs relacionadas (mesma categoria)
+  const allApis = await fetchAPIs()
+  const category = api.tags?.split(',')[0]?.trim() || ''
+  const related = allApis
+    .filter(a => a.id !== api.id && a.tags?.includes(category))
+    .slice(0, 4)
+  
+  return { api, related, category }
 }
 
 export default async function APIDetailPage({ params }: PageProps) {
-  const data = await getAPI(params.slug)
+  const { slug } = await params
+  const data = await getAPI(slug)
   
-  if (!data) {
-    notFound()
-  }
-  
-  const category = getCategoryFromTags(data.api.tags)
+  if (!data) notFound()
   
   return (
     <Suspense fallback={<APIDetailSkeleton />}>
       <APIDetailClient 
         initialApi={data.api}
         initialRelated={data.related}
-        initialCategory={category}
+        initialCategory={data.category}
       />
     </Suspense>
   )

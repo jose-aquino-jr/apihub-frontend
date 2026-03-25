@@ -1,18 +1,17 @@
-// app/apis/page.tsx - SSR
+// app/apis/page.tsx
 import { Suspense } from 'react'
 import { fetchAPIs } from '@/lib/api'
-import type { API } from '@/types'
 import { APICatalogClient } from '@/components/APICatalogClient'
 import { APICatalogSkeleton } from '@/components/APICatalogSkeleton'
 
-// Forçar SSR
-export const dynamic = 'force-dynamic'
-export const revalidate = 3600 // Revalidar a cada hora
+// ISR - Incremental Static Regeneration
+export const revalidate = 3600 // Revalida a cada hora
+export const dynamic = 'force-static' // Gera estático, revalida depois
 
 async function getAPIs() {
   try {
-    const data = await fetchAPIs()
-    return Array.isArray(data) ? data : []
+    const apis = await fetchAPIs()
+    return Array.isArray(apis) ? apis : []
   } catch (error) {
     console.error('Erro ao carregar APIs:', error)
     return []
