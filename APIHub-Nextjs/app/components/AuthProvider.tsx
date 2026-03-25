@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-// components/AuthProvider.tsx - VERSÃO CORRIGIDA PARA AMBOS (Google e GitHub)
-=======
-// components/AuthProvider.tsx
->>>>>>> 177293388e95409eb7999051c37912bd39abae32
 'use client'
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'

@@ -3,8 +3,7 @@ import { Inter } from "next/font/google";
 import { Header } from "./components/Header";
 import { AuthProvider } from "./components/AuthProvider";
 import Image from "next/image";
-import Link from "next/dist/client/link";
-
+import Link from "next/link"; 
 const inter = Inter({
   subsets: ["latin"],
   display: "swap",
@@ -17,6 +16,37 @@ export const metadata = {
   },
   description:
     "Descubra e integre APIs gratuitas em uma plataforma moderna desenvolvida para desenvolvedores.",
+  keywords: "API, APIs gratuitas, desenvolvimento, integração, APIHub",
+  authors: [{ name: "APIHub Team" }],
+  openGraph: {
+    title: "APIHub - Plataforma Gratuita de APIs",
+    description: "Descubra e integre APIs gratuitas em uma plataforma feita para desenvolvedores.",
+    url: "https://apihub.com.br",
+    siteName: "APIHub",
+    images: [
+      {
+        url: "https://apihub.com.br/og-image.jpg",
+        width: 1200,
+        height: 630,
+      },
+    ],
+    locale: "pt_BR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "APIHub - Plataforma Gratuita de APIs",
+    description: "Descubra e integre APIs gratuitas para desenvolvedores.",
+    images: ["https://apihub.com.br/twitter-image.jpg"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 function Footer() {
@@ -51,9 +81,10 @@ function Footer() {
               </p>
               <div className="flex gap-2">
                 {["🚀", "⚡", "🔧"].map((emoji, index) => (
-                  <Link href="/apis"
+                  <Link
                     key={index}
-                    className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-sm hover:bg-gray-200 transition-colors cursor-pointer"
+                    href="/apis"
+                    className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-sm hover:bg-gray-200 transition-colors"
                   >
                     {emoji}
                   </Link>
@@ -69,16 +100,19 @@ function Footer() {
                 {[
                   { name: "Início", href: "/" },
                   { name: "Catálogo", href: "/apis" },
-                  { name: "Documentação", href: "/documentacao-oficial-apihub.pdf" },
+                  {
+                    name: "Documentação",
+                    href: "/documentacao-oficial-apihub.pdf",
+                  },
                 ].map((item) => (
                   <li key={item.name}>
-                    <a
+                    <Link
                       href={item.href}
                       className="text-gray-600 hover:text-blue-600 transition-colors text-sm flex items-center gap-2 group"
                     >
                       <div className="w-1.5 h-1.5 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
                       {item.name}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -95,12 +129,12 @@ function Footer() {
                   "🌤️ Clima & Geografia",
                 ].map((category) => (
                   <li key={category}>
-                    <a
+                    <Link
                       href={`/apis?category=${category.split(" ")[0]}`}
                       className="text-gray-600 hover:text-blue-600 transition-colors text-sm hover:underline"
                     >
                       {category}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -147,12 +181,9 @@ function Footer() {
               </div>
 
               <div className="flex items-center gap-6 text-sm text-gray-600 flex-wrap justify-center">
-                <a
-                  href="/privacy"
-                  className="hover:text-blue-600 transition-colors"
-                >
+                <Link href="/privacy" className="hover:text-blue-600 transition-colors">
                   Privacidade
-                </a>
+                </Link>
                 <div className="text-gray-500">© 2025 APIHub</div>
               </div>
             </div>
@@ -170,28 +201,22 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" className="scroll-smooth">
-      <head>
-        <link rel="icon" href="/favicon.ico" />
-      </head>
       <body className={`${inter.className} antialiased`}>
+        {/* Background decorativo */}
         <div className="fixed inset-0 -z-10 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-blue-50" />
-
           <div className="absolute inset-0 opacity-30">
             <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:64px_64px]" />
           </div>
-
           <div className="absolute top-20 left-10 w-64 h-64 bg-blue-200/20 rounded-full blur-3xl animate-float md:w-96 md:h-96 md:top-1/4 md:left-1/4">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-200 to-cyan-200 rounded-full opacity-60" />
           </div>
-
           <div
             className="absolute top-40 right-10 w-56 h-56 bg-purple-200/20 rounded-full blur-3xl animate-float md:w-80 md:h-80 md:top-1/3 md:right-1/4"
             style={{ animationDelay: "2s" }}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-purple-200 to-pink-200 rounded-full opacity-60" />
           </div>
-
           <div
             className="absolute bottom-20 left-1/2 -translate-x-1/2 w-48 h-48 bg-cyan-200/20 rounded-full blur-3xl animate-float md:w-64 md:h-64 md:bottom-1/4"
             style={{ animationDelay: "4s" }}
