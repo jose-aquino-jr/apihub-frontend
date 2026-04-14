@@ -14,8 +14,7 @@ function getAuthHeader(): HeadersInit {
 export async function fetchAPIs(): Promise<any[]> {
   try {
     const response = await fetch(`${API_BASE_URL}/apis`, {
-      cache: 'no-store',
-      headers: { 'Content-Type': 'application/json' }
+      next: { revalidate: REVALIDATE_TIME }
     })
     if (!response.ok) {
       console.error('[api] Erro ao buscar APIs:', response.status)
@@ -32,7 +31,10 @@ export async function fetchAPIs(): Promise<any[]> {
 export async function fetchAPIBySlug(slug: string): Promise<any | null> {
   try {
     const apis = await fetchAPIs()
-    return apis.find((a: any) => generateSlug(a.name) === slug) || null
+    console.log(`[fetchAPIBySlug] total APIs: ${apis.length}, buscando slug: "${slug}"`)
+    const found = apis.find((a: any) => generateSlug(a.name) === slug) || null
+    console.log(`[fetchAPIBySlug] encontrou: ${found?.name ?? 'nenhuma'}`)
+    return found
   } catch (error) {
     console.error('[api] Erro ao buscar API por slug:', error)
     return null
