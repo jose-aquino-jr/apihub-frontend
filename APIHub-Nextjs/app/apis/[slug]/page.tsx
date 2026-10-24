@@ -9,12 +9,15 @@ import { APIDetailSkeleton } from '@/components/APIDetailSkeleton'
 export const revalidate = 3600
 // remove o dynamic = 'force-static'
 
+
 export async function generateStaticParams() {
-  const apis = await fetchAPIs()
-  return apis.map((api: any) => ({
-    slug: api.slug
-  }))
+    const apis = await fetchAPIs()
+
+    return apis.map((api: any) => ({
+        slug: generateSlug(api.name)
+    }))
 }
+
 
 interface PageProps {
   params: Promise<{ slug: string }>
